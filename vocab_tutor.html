@@ -189,9 +189,20 @@
              min-width: 150px;
              margin: 25px auto 0 auto; /* Center button */
          }
+        /* --- Stick Figure Background Styles --- */
+        #stick-figure-background { /* ... */ 
+        }
+        .stick-figure { /* ... */ 
+        }
+        .stick-figure .part { /* ... */ 
+        }
+        /* ... rest of the new CSS rules ... */
+        #completion-area button { /* ... */ 
+        }
     </style>
 </head>
 <body>
+    <div id="stick-figure-background" aria-hidden="true"></div>
     <div class="container">
         <h1>Vocabulary Practice</h1>
 
@@ -231,6 +242,8 @@
         // --- Configuration ---
         const RETRY_DELAY_MS = 2000;
         const SUCCESS_DELAY_MS = 1500;
+        const NUM_STICK_FIGURES = 8; // How many figures?
+        const STICK_FIGURE_MOVE_INTERVAL_MS = 3000; // How often they potentially move/change pose
 
         // --- Encouragement Messages ---
         const CORRECT_MESSAGES = [ /* ... */ "Correct!", "Excellent!", "You got it!", "Perfect match!", "Awesome!", "Way to go!", "Spot on!" ];
@@ -253,6 +266,7 @@
         const finalScoreDisplay = document.getElementById('final-score');
         const incorrectItemsDisplay = document.getElementById('incorrect-items-list');
         const restartButton = document.getElementById('restart-button');
+        const stickFigureBackground = document.getElementById('stick-figure-background');
 
         // --- Global State ---
         let vocabItems = [];
@@ -260,6 +274,8 @@
         let practiceMode = '1';
         let isWaiting = false;
         let incorrectItems = []; // NEW: Stores incorrect {word, definition} objects
+        let stickFigures = []; // NEW: Array to hold figure data/elements
+        let stickFigureInterval = null; // NEW: To control the animation loop
 
         // --- Helper Functions ---
         // ... (getRandomElement, shuffleArray, displayError, clearError, clearFeedback, parseVocab remain unchanged) ...
@@ -269,7 +285,14 @@
         function clearError() { errorDisplay.innerHTML = ''; }
         function clearFeedback() { feedbackArea.innerHTML = ''; feedbackArea.className = 'feedback-area'; }
         function parseVocab(text) { const lines = text.trim().split('\n'); const parsedVocab = []; const errors = []; lines.forEach((line, index) => { line = line.trim(); if (!line) return; const parts = line.split(':'); if (parts.length < 2) { errors.push(`Line ${index + 1}: Missing colon ':' - "${line}"`); return; } const word = parts[0].trim(); const definition = parts.slice(1).join(':').trim(); if (!word || !definition) { errors.push(`Line ${index + 1}: Empty word or definition - "${line}"`); return; } parsedVocab.push({ word, definition }); }); if (errors.length > 0) { displayError(`<strong>Error parsing vocabulary:</strong><br>${errors.join('<br>')}`); return null; } if (parsedVocab.length === 0) { displayError('No valid vocabulary pairs found...'); return null; } clearError(); return parsedVocab; }
+        // --- NEW Stick Figure Functions ---
+        function createStickFigureElement() { /* ... */ }
+        function setStickFigurePose(figure, poseName) { /* ... */ }
+        function animateStickFigure(figure) { /* ... */ }
+        function initStickFigures() { /* ... */ }
 
+// --- Core Practice Logic ---
+function displayCurrentItem() { /* ... */ }
         // --- Core Practice Logic ---
         function displayCurrentItem() {
              // ... (displayCurrentItem logic remains largely unchanged) ...
