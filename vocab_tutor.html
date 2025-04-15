@@ -190,12 +190,65 @@
              margin: 25px auto 0 auto; /* Center button */
          }
         /* --- Stick Figure Background Styles --- */
-        #stick-figure-background { /* ... */ 
+        #stick-figure-background {
+            position: fixed; /* Keep it fixed in the viewport */
+            top: 0;
+            left: 0;
+            width: 100vw; /* Full viewport width */
+            height: 100vh; /* Full viewport height */
+            z-index: -1;  /* Place it behind everything else */
+            overflow: hidden; /* Hide figures that go off-screen */
+            pointer-events: none; /* Make it unclickable */
+            opacity: 0.15; /* Make them subtle */
         }
-        .stick-figure { /* ... */ 
+        
+        .stick-figure {
+            position: absolute; /* Position relative to background container */
+            width: 50px;  /* Adjust size as needed */
+            height: 80px; /* Adjust size as needed */
+            /* Smooth transition for movement */
+            transition: left 2s ease-in-out, top 2s ease-in-out;
         }
-        .stick-figure .part { /* ... */ 
+        
+        .stick-figure .part {
+            position: absolute;
+            background-color: #555; /* Stick figure color */
+            /* Smooth transition for limb rotation */
+            transition: transform 0.5s ease-in-out;
         }
+        
+        .stick-figure .head {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            top: 0;
+            left: 17px; /* Center head */
+        }
+        
+        .stick-figure .body {
+            width: 4px;
+            height: 35px;
+            top: 16px; /* Below head */
+            left: 23px; /* Center body */
+            transform-origin: top center; /* Rotation point if needed */
+        }
+        
+        .stick-figure .arm {
+            width: 4px;
+            height: 25px;
+            top: 18px; /* Shoulder height */
+            left: 23px; /* Attach to body center */
+            transform-origin: top center; /* Rotate from shoulder */
+        }
+        
+        .stick-figure .leg {
+            width: 4px;
+            height: 30px;
+            top: 48px; /* Hip height */
+            left: 23px; /* Attach to body center */
+            transform-origin: top center; /* Rotate from hip */
+        }
+        /* --- End of Stick Figure Background Styles --- */
         /* ... rest of the new CSS rules ... */
         #completion-area button { /* ... */ 
         }
@@ -286,10 +339,126 @@
         function clearFeedback() { feedbackArea.innerHTML = ''; feedbackArea.className = 'feedback-area'; }
         function parseVocab(text) { const lines = text.trim().split('\n'); const parsedVocab = []; const errors = []; lines.forEach((line, index) => { line = line.trim(); if (!line) return; const parts = line.split(':'); if (parts.length < 2) { errors.push(`Line ${index + 1}: Missing colon ':' - "${line}"`); return; } const word = parts[0].trim(); const definition = parts.slice(1).join(':').trim(); if (!word || !definition) { errors.push(`Line ${index + 1}: Empty word or definition - "${line}"`); return; } parsedVocab.push({ word, definition }); }); if (errors.length > 0) { displayError(`<strong>Error parsing vocabulary:</strong><br>${errors.join('<br>')}`); return null; } if (parsedVocab.length === 0) { displayError('No valid vocabulary pairs found...'); return null; } clearError(); return parsedVocab; }
         // --- NEW Stick Figure Functions ---
-        function createStickFigureElement() { /* ... */ }
-        function setStickFigurePose(figure, poseName) { /* ... */ }
-        function animateStickFigure(figure) { /* ... */ }
-        function initStickFigures() { /* ... */ }
+
+        // Creates a single stick figure DOM element
+        function createStickFigureElement() {
+            const figure = document.createElement('div');
+            figure.className = 'stick-figure';
+        
+            const head = document.createElement('div');
+            head.className = 'part head';
+            figure.appendChild(head);
+        
+            const body = document.createElement('div');
+            body.className = 'part body';
+            figure.appendChild(body);
+        
+            // Store parts for easy access later
+            figure.parts = { head, body };
+        
+            ['left', 'right'].forEach(side => {
+                const arm = document.createElement('div');
+                arm.className = `part arm ${side}`;
+                figure.appendChild(arm);
+                figure.parts[`arm_${side}`] = arm; // e.g., figure.parts.arm_left
+        
+                const leg = document.createElement('div');
+                leg.className = `part leg ${side}`;
+                figure.appendChild(leg);
+                figure.parts[`leg_${side}`] = leg; // e.g., figure.parts.leg_left
+            });
+        
+            return figure;
+        }
+        
+        // Applies a pose by rotating limbs
+        function setStickFigurePose(figure, poseName) {
+            const parts = figure.parts;
+            // Define rotation angles for different poses
+            const poses = {
+                idle: { arm_left: -10, arm_right: 10, leg_left: -5, leg_right: 5 },
+                wave_hello: { arm_left: -140, arm_right: 10, leg_left: -5, leg_right: 5 },
+                walking1: { arm_left: 30, arm_right: -30, leg_left: -40, leg_right: 40 },
+                walking2: { arm_left: -30, arm_right: 30, leg_left: 40, leg_right: -40 },
+                jumping: { arm_left: -60, arm_right: 60, leg_left: -20, leg_right: 20, body_rotate: 0, body_jump: -15 }, // Added body jump
+                thinking: { arm_left: -10, arm_right: -90, leg_left: -5, leg_right: 5, head_rotate: -15 }, // Added head tilt
+            };
+        
+            const pose = poses[poseName] || poses.idle; // Default to idle
+        
+            parts.arm_left.style.transform = `rotate(${pose.arm_left || 0}deg)`;
+            parts.arm_right.style.transform = `rotate(${pose.arm_right || 0}deg)`;
+            parts.leg_left.style.transform = `rotate(${pose.leg_left || 0}deg)`;
+            parts.leg_right.style.transform = `rotate(${pose.leg_right || 0}deg)`;
+        
+            // Optional body/head adjustments
+            parts.body.style.transform = `translateY(<span class="math-inline">\{pose\.body\_jump \|\| 0\}px\) rotate\(</span>{pose.body_rotate || 0}deg)`;
+            parts.head.style.transform = `rotate(${pose.head_rotate || 0}deg)`;
+        
+             // Track current pose if needed later (e.g., for alternating walk)
+            figure.currentPose = poseName;
+        }
+        
+        // Main animation function for a single figure
+        function animateStickFigure(figure) {
+            // 1. Maybe change position
+            if (Math.random() < 0.3) { // 30% chance to move
+                const maxWidth = stickFigureBackground.clientWidth - figure.offsetWidth;
+                const maxHeight = stickFigureBackground.clientHeight - figure.offsetHeight;
+                figure.style.left = `${Math.random() * maxWidth}px`;
+                figure.style.top = `${Math.random() * maxHeight}px`;
+            }
+        
+            // 2. Choose a new random pose
+            const poseChoices = ['idle', 'wave_hello', 'walking1', 'walking2', 'jumping', 'thinking', 'idle', 'idle']; // Add more 'idle' to make it more common
+            const newPose = getRandomElement(poseChoices);
+            setStickFigurePose(figure, newPose);
+        }
+        
+        // Initialize all figures and start animation loop
+        function initStickFigures() {
+            if (!stickFigureBackground) return; // Safety check
+            // Clear existing figures if any (e.g., on restart)
+            stickFigureBackground.innerHTML = '';
+            stickFigures = []; // Clear the array
+            // Stop previous interval if running
+             if (stickFigureInterval) {
+                 clearInterval(stickFigureInterval);
+                 stickFigureInterval = null;
+             }
+        
+        
+            for (let i = 0; i < NUM_STICK_FIGURES; i++) {
+                const figureElement = createStickFigureElement();
+        
+                // Set initial random position
+                const maxWidth = stickFigureBackground.clientWidth - figureElement.offsetWidth;
+                const maxHeight = stickFigureBackground.clientHeight - figureElement.offsetHeight;
+                 // Set style directly without transition for initial placement
+                figureElement.style.transition = 'none'; // Disable transition temporarily
+                figureElement.style.left = `${Math.random() * maxWidth}px`;
+                figureElement.style.top = `${Math.random() * maxHeight}px`;
+        
+                // Force browser reflow to apply position immediately
+                void figureElement.offsetWidth;
+        
+                // Re-enable transitions
+                figureElement.style.transition = ''; // Revert to CSS defined transitions
+        
+                setStickFigurePose(figureElement, 'idle'); // Initial pose
+        
+                stickFigureBackground.appendChild(figureElement);
+                stickFigures.push(figureElement); // Store for animation
+            }
+        
+            // Start the animation interval ONLY if stick figures were created
+             if (stickFigures.length > 0) {
+                 stickFigureInterval = setInterval(() => {
+                     stickFigures.forEach(animateStickFigure);
+                 }, STICK_FIGURE_MOVE_INTERVAL_MS);
+             }
+        }
+        // --- End of NEW Stick Figure Functions ---
 
 // --- Core Practice Logic ---
 function displayCurrentItem() { /* ... */ }
@@ -420,7 +589,17 @@ function displayCurrentItem() { /* ... */ }
             setupArea.style.display = 'none';
             completionArea.style.display = 'none';
             practiceArea.style.display = 'block';
-
+            function startPractice() {
+            // ... (other setup code) ...
+            incorrectItems = []; // Reset incorrect items list
+        
+            setupArea.style.display = 'none';
+            completionArea.style.display = 'none';
+            practiceArea.style.display = 'block';
+        
+            initStickFigures(); // << ADD THIS LINE
+            displayCurrentItem();
+}
             displayCurrentItem();
         }
 
@@ -438,6 +617,18 @@ function displayCurrentItem() { /* ... */ }
             // Clear results display
             finalScoreDisplay.textContent = '';
             incorrectItemsDisplay.innerHTML = '';
+            incorrectItems = []; // Reset incorrect items list
+            finalScoreDisplay.textContent = '';
+            incorrectItemsDisplay.innerHTML = '';
+
+     // Stop and clear stick figures (Add this block HERE)
+     if (stickFigureInterval) {
+         clearInterval(stickFigureInterval);
+         stickFigureInterval = null;
+     }
+     if(stickFigureBackground) stickFigureBackground.innerHTML = '';
+     stickFigures = [];
+ } // <-- End of function
         }
 
 
