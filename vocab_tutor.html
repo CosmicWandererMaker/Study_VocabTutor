@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary Practice</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        textarea {
+            width: 95%;
+            min-height: 150px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .radio-group label {
+            font-weight: normal;
+            display: inline-block;
+            margin-right: 15px;
+        }
+        input[type="text"] {
+            width: 95%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 15px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #practice-area {
+            display: none; /* Hidden initially */
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            background-color: #fdfdfd;
+        }
+        #prompt-area {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+        #prompt-label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        #feedback-area {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            min-height: 40px; /* Prevent layout jumps */
+        }
+        .feedback-correct {
+            color: #155724;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .feedback-incorrect {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .error-message {
+            color: #D8000C;
+            background-color: #FFD2D2;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        #progress-display {
+            text-align: right;
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+         hr {
+            margin: 20px 0;
+            border: 0;
+            border-top: 1px solid #eee;
+        }
+        pre {
+             background-color: #eee;
+             padding: 10px;
+             border-radius: 4px;
+             font-size: 0.9em;
+             white-space: pre-wrap; /* Allows wrapping */
+             word-wrap: break-word; /* Breaks long words */
+        }
+
+        /* --- NEW Styles for Completion Area --- */
+        #completion-area {
+             display: none; /* Hidden initially */
+             margin-top: 20px;
+             padding: 20px; /* More padding */
+             border: 1px solid #eee;
+             border-radius: 5px;
+             background-color: #fdfdfd;
+             text-align: left; /* Align results left */
+        }
+         #completion-area h2 {
+            text-align: center; /* Center heading */
+            margin-bottom: 15px;
+         }
+          #completion-area p {
+             text-align: center; /* Center paragraph */
+             margin-bottom: 20px;
+         }
+         #results-summary { /* Container for results */
+             margin-top: 20px;
+             padding: 15px;
+             background-color: #f8f9fa;
+             border: 1px solid #e9ecef;
+             border-radius: 5px;
+         }
+         #final-score {
+             font-size: 1.2em;
+             font-weight: bold;
+             color: #007bff;
+             margin-bottom: 15px;
+             text-align: center;
+         }
+         #incorrect-items-list h3 {
+             margin-top: 0;
+             margin-bottom: 10px;
+             color: #dc3545; /* Red heading for review items */
+             font-size: 1.1em;
+         }
+         #incorrect-items-list p {
+             margin: 5px 0 10px 0; /* Space out list items */
+             text-align: left; /* Align items left */
+             font-size: 0.95em;
+             color: #333;
+         }
+          #incorrect-items-list p strong {
+              color: #17a2b8; /* Different color for word */
+          }
+         #completion-area button { /* Restart button */
+             display: block;
+             width: auto; /* Auto width */
+             min-width: 150px;
+             margin: 25px auto 0 auto; /* Center button */
+         }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vocabulary Practice</h1>
+
+        <div id="setup-area">
+            <h2>Setup</h2>
+            <div id="error-display"></div>
+            <label for="vocab-input">Paste your vocabulary below (one item per line, format: <code>Word: Definition</code>):</label>
+            <textarea id="vocab-input" placeholder="Example: ..."></textarea>
+            <label>Choose Practice Mode:</label>
+            <div class="radio-group">
+                 <label><input type="radio" name="practice-mode" value="1" checked> Show Definition -&gt; Enter Word</label>
+                 <label><input type="radio" name="practice-mode" value="2"> Show Word -&gt; Enter Definition</label>
+            </div>
+            <button id="start-button">Start Practice</button>
+        </div>
+
+        <div id="practice-area">
+            <div id="progress-display"></div>
+            <hr>
+            <div id="prompt-area"> <span id="prompt-label"></span> <span id="prompt-text"></span> </div>
+            <label for="answer-input">Your Answer:</label>
+            <input type="text" id="answer-input" autocomplete="off">
+            <button id="submit-button">Submit Answer</button>
+            <div id="feedback-area"></div>
+        </div>
+
+        <div id="completion-area">
+            <h2>🎉 Vocabulary Practice Complete! 🎉</h2>
+            <p>Excellent work!</p>
+            <div id="results-summary"> <div id="final-score"></div> <hr>
+                 <div id="incorrect-items-list"></div> </div>
+            <button id="restart-button">Practice Again</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const RETRY_DELAY_MS = 2000;
+        const SUCCESS_DELAY_MS = 1500;
+
+        // --- Encouragement Messages ---
+        const CORRECT_MESSAGES = [ /* ... */ "Correct!", "Excellent!", "You got it!", "Perfect match!", "Awesome!", "Way to go!", "Spot on!" ];
+        const INCORRECT_MESSAGES = [ /* ... */ "Not quite.", "Almost there.", "That's not the match.", "Keep thinking!", "Good effort." ];
+
+        // --- DOM Elements ---
+        const setupArea = document.getElementById('setup-area');
+        const practiceArea = document.getElementById('practice-area');
+        const completionArea = document.getElementById('completion-area');
+        const errorDisplay = document.getElementById('error-display');
+        const vocabInput = document.getElementById('vocab-input');
+        const startButton = document.getElementById('start-button');
+        const progressDisplay = document.getElementById('progress-display');
+        const promptLabel = document.getElementById('prompt-label');
+        const promptText = document.getElementById('prompt-text');
+        const answerInput = document.getElementById('answer-input');
+        const submitButton = document.getElementById('submit-button');
+        const feedbackArea = document.getElementById('feedback-area');
+        // NEW Completion Area elements
+        const finalScoreDisplay = document.getElementById('final-score');
+        const incorrectItemsDisplay = document.getElementById('incorrect-items-list');
+        const restartButton = document.getElementById('restart-button');
+
+        // --- Global State ---
+        let vocabItems = [];
+        let currentItemIndex = 0;
+        let practiceMode = '1';
+        let isWaiting = false;
+        let incorrectItems = []; // NEW: Stores incorrect {word, definition} objects
+
+        // --- Helper Functions ---
+        // ... (getRandomElement, shuffleArray, displayError, clearError, clearFeedback, parseVocab remain unchanged) ...
+        function getRandomElement(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[array[i], array[j]] = [array[j], array[i]]; } }
+        function displayError(message) { errorDisplay.innerHTML = `<div class="error-message">${message}</div>`; }
+        function clearError() { errorDisplay.innerHTML = ''; }
+        function clearFeedback() { feedbackArea.innerHTML = ''; feedbackArea.className = 'feedback-area'; }
+        function parseVocab(text) { const lines = text.trim().split('\n'); const parsedVocab = []; const errors = []; lines.forEach((line, index) => { line = line.trim(); if (!line) return; const parts = line.split(':'); if (parts.length < 2) { errors.push(`Line ${index + 1}: Missing colon ':' - "${line}"`); return; } const word = parts[0].trim(); const definition = parts.slice(1).join(':').trim(); if (!word || !definition) { errors.push(`Line ${index + 1}: Empty word or definition - "${line}"`); return; } parsedVocab.push({ word, definition }); }); if (errors.length > 0) { displayError(`<strong>Error parsing vocabulary:</strong><br>${errors.join('<br>')}`); return null; } if (parsedVocab.length === 0) { displayError('No valid vocabulary pairs found...'); return null; } clearError(); return parsedVocab; }
+
+        // --- Core Practice Logic ---
+        function displayCurrentItem() {
+             // ... (displayCurrentItem logic remains largely unchanged) ...
+             clearFeedback();
+            if (currentItemIndex >= vocabItems.length) {
+                showCompletion();
+                return;
+            }
+            const item = vocabItems[currentItemIndex];
+            const totalItems = vocabItems.length;
+            progressDisplay.textContent = `Item ${currentItemIndex + 1} of ${totalItems}`;
+            answerInput.value = '';
+            answerInput.disabled = false;
+            submitButton.disabled = false;
+            isWaiting = false;
+            if (practiceMode === '1') {
+                promptLabel.textContent = "Definition:";
+                promptText.textContent = item.definition;
+            } else {
+                promptLabel.textContent = "Word:";
+                promptText.textContent = item.word;
+            }
+            answerInput.focus();
+        }
+
+        // --- UPDATED checkAnswer function ---
+        function checkAnswer() {
+            if (isWaiting) return;
+
+            const userAnswer = answerInput.value.trim();
+            if (!userAnswer) {
+                feedbackArea.textContent = "Please enter an answer.";
+                feedbackArea.className = 'feedback-area feedback-incorrect';
+                return;
+            }
+
+            const currentItem = vocabItems[currentItemIndex];
+            let correctAnswer;
+            let isMatch;
+
+            if (practiceMode === '1') { // Show Definition -> Enter Word
+                correctAnswer = currentItem.word;
+                isMatch = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
+            } else { // Show Word -> Enter Definition
+                correctAnswer = currentItem.definition;
+                isMatch = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
+            }
+
+            isWaiting = true;
+            answerInput.disabled = true;
+            submitButton.disabled = true;
+
+            if (isMatch) {
+                feedbackArea.innerHTML = `${getRandomElement(CORRECT_MESSAGES)}`;
+                feedbackArea.className = 'feedback-area feedback-correct';
+                setTimeout(() => {
+                    currentItemIndex++; // Move to next item index
+                    displayCurrentItem();
+                }, SUCCESS_DELAY_MS);
+            } else {
+                // Incorrect Answer
+                feedbackArea.innerHTML = `${getRandomElement(INCORRECT_MESSAGES)}<br><strong>The correct answer was:</strong> ${correctAnswer}`;
+                feedbackArea.className = 'feedback-area feedback-incorrect';
+
+                // Add to incorrect list if not already present (check by word)
+                const wordAlreadyMarked = incorrectItems.some(item =>
+                    item.word.toLowerCase() === currentItem.word.toLowerCase()
+                );
+                if (!wordAlreadyMarked) {
+                    incorrectItems.push(currentItem); // Add the whole {word, def} object
+                }
+
+                // Retry SAME item index
+                setTimeout(() => {
+                    displayCurrentItem();
+                }, RETRY_DELAY_MS);
+            }
+        }
+
+        // --- UPDATED showCompletion function ---
+        function showCompletion() {
+            practiceArea.style.display = 'none';
+            completionArea.style.display = 'block'; // Show completion area
+
+            const totalItems = vocabItems.length;
+            const incorrectCount = incorrectItems.length;
+            let scorePercentage = 0;
+            let correctCount = 0;
+
+            if (totalItems > 0) {
+                correctCount = Math.max(0, totalItems - incorrectCount);
+                scorePercentage = (correctCount / totalItems) * 100;
+            }
+
+            // Display Score
+            finalScoreDisplay.textContent = `Your Score: ${correctCount} / ${totalItems} (${scorePercentage.toFixed(1)}%)`;
+
+            // Display Incorrect Items
+            let incorrectListHTML = '<h3>Items to Review:</h3>'; // Heading for the list
+            if (incorrectItems.length === 0) {
+                 incorrectListHTML += '<p>None! Perfect score!</p>';
+            } else {
+                // Create a paragraph for each incorrect item
+                 incorrectListHTML += incorrectItems.map(item =>
+                     `<p><strong>${item.word}:</strong> ${item.definition}</p>`
+                 ).join(''); // Join paragraphs without extra separators
+            }
+            incorrectItemsDisplay.innerHTML = incorrectListHTML; // Update the display element
+        }
+
+        // --- UPDATED startPractice function ---
+        function startPractice() {
+            clearError();
+            const rawVocab = vocabInput.value;
+            const parsed = parseVocab(rawVocab);
+
+            if (!parsed) return;
+
+            vocabItems = parsed;
+            shuffleArray(vocabItems);
+            currentItemIndex = 0;
+            practiceMode = document.querySelector('input[name="practice-mode"]:checked').value;
+            incorrectItems = []; // Reset incorrect items list
+
+            setupArea.style.display = 'none';
+            completionArea.style.display = 'none';
+            practiceArea.style.display = 'block';
+
+            displayCurrentItem();
+        }
+
+        // --- UPDATED restartPractice function ---
+        function restartPractice() {
+            completionArea.style.display = 'none';
+            practiceArea.style.display = 'none';
+            setupArea.style.display = 'block';
+            clearError();
+            clearFeedback(); // Clear feedback area as well
+            // Optional: vocabInput.value = '';
+            vocabItems = [];
+            currentItemIndex = 0;
+            incorrectItems = []; // Reset incorrect items list
+            // Clear results display
+            finalScoreDisplay.textContent = '';
+            incorrectItemsDisplay.innerHTML = '';
+        }
+
+
+        // --- Event Listeners ---
+        startButton.addEventListener('click', startPractice);
+        submitButton.addEventListener('click', checkAnswer);
+        restartButton.addEventListener('click', restartPractice);
+        answerInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' && !submitButton.disabled) { // check button enabled
+                event.preventDefault();
+                checkAnswer();
+            }
+        });
+
+    </script>
+</body>
+</html>
